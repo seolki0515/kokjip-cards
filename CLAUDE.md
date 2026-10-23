@@ -2,6 +2,10 @@
 
 이 저장소에 게시물을 올리는 것은 **발행 요청**이다. main에 합쳐지면 GitHub Actions가 인스타그램(@kokjip.news)에 바로 게시한다.
 
+## 보통은 저장소를 직접 만지지 않는다
+
+매일 작업은 노션 '05 콘텐츠 운영 기록' 행에 `cards.html`·`caption.txt`를 첨부하고 '깃허브'를 '요청'으로 바꾸는 것까지다. PR은 GitHub Actions(`from-notion.yml`)가 연다. 아래 규칙은 사람이 직접 PR을 만들 때 쓴다.
+
 ## 반드시 지킬 것
 
 - **main에 직접 push하지 않는다.** 항상 새 브랜치 `post/<폴더이름>` → Pull Request. Merge는 Becky만 한다.
