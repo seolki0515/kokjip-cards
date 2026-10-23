@@ -97,7 +97,8 @@ def build(page):
     pid = page["id"]
     props = page["properties"]
     date = notion.plain(props.get("게시일")) or dt.datetime.now(KST).date().isoformat()
-    folder_name = f"{date[:10]}-{pid.replace('-', '')[:8]}"
+    # Notion page ids in one workspace share their first characters, so use the end.
+    folder_name = f"{date[:10]}-{pid.replace('-', '')[-8:]}"
     branch = f"post/{folder_name}"
     if branch_exists(branch):
         return None, f"이미 브랜치가 있음: {branch}"
@@ -192,8 +193,9 @@ def main():
         if url:
             print(f"✅ {name}: {url}")
             mark(page["id"], "PR 열림", url)
-        else:
+        else:  # don't leave it as '요청' or it is retried every 15 minutes
             print(f"⏭️ {name}: {note}")
+            mark(page["id"], "실패", note)
     return 1 if failed else 0
 
 
