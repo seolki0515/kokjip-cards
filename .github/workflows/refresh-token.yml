@@ -1,0 +1,39 @@
+name: 인스타 토큰 연장
+
+# 인스타 토큰은 60일이면 만료돼요. 매달 1일·15일에 자동으로 연장해요.
+on:
+  schedule:
+    - cron: "17 0 1,15 * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 토큰 연장
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          NEW_TOKEN_FILE: ${{ runner.temp }}/new_token
+        run: python scripts/refresh_token.py
+
+      - name: 새 토큰을 비밀값에 저장
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          NEW_TOKEN_FILE: ${{ runner.temp }}/new_token
+        run: |
+          [ -s "$NEW_TOKEN_FILE" ] || exit 0
+          if [ "$(cat "$NEW_TOKEN_FILE")" = "$IG_ACCESS_TOKEN" ]; then
+            echo "토큰 문자열이 그대로라 비밀값을 바꿀 필요 없음"
+          elif [ -n "$GH_TOKEN" ]; then
+            gh secret set IG_ACCESS_TOKEN --repo "$GITHUB_REPOSITORY" < "$NEW_TOKEN_FILE"
+            echo "✅ 새 토큰을 IG_ACCESS_TOKEN 비밀값에 저장함"
+          else
+            echo "❌ 새 토큰이 나왔지만 GH_PAT 비밀값이 없어 저장하지 못함. 안내서의 'GH_PAT 넣기'를 해주세요."
+            exit 1
+          fi
+          rm -f "$NEW_TOKEN_FILE"
