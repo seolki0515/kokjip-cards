@@ -1,0 +1,54 @@
+name: 인스타 발행
+
+on:
+  push:
+    branches: [main]
+    paths: ["posts/**"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: instagram-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install Pillow==11.0.0
+
+      - name: 인스타그램에 발행
+        id: pub
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+        run: python scripts/publish.py
+
+      - name: 발행 기록 저장
+        if: always()
+        run: |
+          if [ -n "$(git status --porcelain posts)" ]; then
+            git config user.name "kokjip-bot"
+            git config user.email "kokjip-bot@users.noreply.github.com"
+            git add posts
+            git commit -m "발행 기록 저장 [skip ci]"
+            git push
+          fi
+
+      - name: 합친 PR에 인스타 링크 남기기
+        if: steps.pub.outputs.published != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLISHED: ${{ steps.pub.outputs.published }}
+        run: |
+          pr=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" --jq '.[0].number // empty')
+          if [ -n "$pr" ]; then
+            gh pr comment "$pr" --body "✅ 인스타그램에 발행됐어요
+          ${PUBLISHED}"
+          fi
