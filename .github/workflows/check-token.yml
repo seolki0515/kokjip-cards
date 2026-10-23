@@ -1,0 +1,24 @@
+name: 토큰 확인 (임시)
+on:
+  push:
+    branches: [check-token]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 토큰으로 계정 정보만 읽기 (발행 안 함)
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+        run: |
+          cd scripts && python3 - <<'PY'
+          import os, ig
+          t = os.environ["IG_ACCESS_TOKEN"].strip()
+          print("토큰 길이:", len(t), "/ 앞 4글자:", t[:4])
+          info = ig.get("me", t, fields="user_id,username,account_type,media_count")
+          print("계정:", info.get("username"), "| 유형:", info.get("account_type"), "| 게시물 수:", info.get("media_count"))
+          lim = ig.get(f"{info['user_id']}/content_publishing_limit", t, fields="quota_usage,config")
+          print("발행 한도:", lim)
+          PY
