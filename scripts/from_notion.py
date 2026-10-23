@@ -158,6 +158,12 @@ def build(page):
         "head": branch, "base": "main", "body": body,
     })
     sh("git", "checkout", "main")
+    # Assign the repository owner so GitHub always notifies her (even without watching).
+    owner = os.environ["GITHUB_REPOSITORY"].split("/")[0]
+    try:
+        gh_api("POST", f"issues/{pr['number']}/assignees", {"assignees": [owner]})
+    except Exception as e:  # noqa: BLE001 — PR is open; a missing assignee is not fatal
+        print(f"   ⚠️ 담당자 지정 실패: {e}")
     return pr["html_url"], None
 
 
