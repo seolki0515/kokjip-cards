@@ -48,6 +48,24 @@ def publish(folder, token, user_id):
     return media["id"], info.get("permalink", "")
 
 
+def record_in_notion(folder, link):
+    """Mark the Notion row as published (best effort; publishing already succeeded)."""
+    src = folder / "source.json"
+    if not (src.exists() and os.environ.get("NOTION_TOKEN", "").strip()):
+        return
+    try:
+        import notion
+        pid = json.loads(src.read_text(encoding="utf-8"))["notion_page_id"]
+        notion.update_page(pid, {
+            "상태": {"status": {"name": "발행됨"}},
+            "게시물 URL": {"url": link or None},
+            "깃허브": {"select": {"name": "발행됨"}},
+        })
+        print("   노션 기록: 발행됨")
+    except Exception as e:  # noqa: BLE001
+        print(f"   ⚠️ 노션 기록 실패(발행은 완료됨): {e}")
+
+
 def main():
     token = os.environ.get("IG_ACCESS_TOKEN", "").strip()
     posts = pending_posts()
@@ -89,6 +107,7 @@ def main():
         (d / "published.json").write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(f"✅ {d.name} 발행 완료: {link}")
         summary.append(f"- {d.name}: {link}")
+        record_in_notion(d, link)
 
     out = os.environ.get("GITHUB_OUTPUT")
     if out and summary:

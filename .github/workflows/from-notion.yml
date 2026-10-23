@@ -1,0 +1,44 @@
+name: 노션에서 PR 만들기
+
+# 노션 '05 콘텐츠 운영 기록'에서 '깃허브 = 요청'인 게시물을 찾아 발행 대기 PR을 열어요.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: from-notion
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    env:
+      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: 요청이 있는지 확인
+        id: q
+        run: python scripts/from_notion.py check
+
+      - name: 카드 렌더링 도구 설치
+        if: steps.q.outputs.has_work == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk fonts-noto-cjk-extra fonts-noto-color-emoji > /dev/null
+          pip install Pillow==11.0.0 playwright==1.48.0
+          python -m playwright install --with-deps chromium
+
+      - name: 카드 만들고 PR 열기
+        if: steps.q.outputs.has_work == 'true'
+        run: python scripts/from_notion.py run
