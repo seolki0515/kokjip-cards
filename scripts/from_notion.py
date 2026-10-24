@@ -145,6 +145,7 @@ def build(page):
     if is_test:
         prefix = "[시험·발행 안 됨]"
     body = "\n\n".join([
+        "### 검토 요약\n" + (notion.plain(props.get("검토 요약")) or "(검토 요약 없음 — Claude 메시지 확인)").replace("\n", "  \n"),
         f"**주제** {notion.plain(props.get('주제'))}",
         f"**선정 이유** {notion.plain(props.get('선정 이유'))}",
         f"**출처** {notion.plain(props.get('공식 원문 링크'))}",
