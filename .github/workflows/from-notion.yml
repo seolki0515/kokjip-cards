@@ -3,7 +3,9 @@ name: 노션에서 PR 만들기
 # 노션 '05 콘텐츠 운영 기록'에서 '깃허브 = 요청'인 게시물을 찾아 발행 대기 PR을 열어요.
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: '33,43,53 23 * * *'
+    - cron: '7,23 0 * * *'
+    - cron: '17 */3 * * *'
   workflow_dispatch: {}
 
 permissions:
